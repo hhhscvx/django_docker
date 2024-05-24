@@ -6,6 +6,22 @@ services:
       - "8000:8000"
     volumes:
       - ./service:/service
+    environment:
+      - DB_HOST=db # ссылка на сервис дб
+      - DB_NAME=pgdb
+      - DB_USER=pguser
+      - DB_PASS=pgpassword
 
     command: > # команда при запуске контейнера
       sh -c "python manage.py runserver 0.0.0.0:8000"
+
+    depends_on:
+      - db # не запускаем веб, пока не запущена бд
+
+  db:
+    image: postgres:14.6-alpine
+    restart: always # перезапуск контейнера при краше
+    environment:
+      - POSTGRES_DB=pgdb
+      - POSTGRES_USER=pguser
+      - POSTGRES_PASSWORD=pgpassword
