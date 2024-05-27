@@ -46,3 +46,5 @@ class Subscription(models.Model):
                                related_name='subscriptions',
                                on_delete=models.CASCADE)
     
+    def __str__(self):
+        return f"{self.client.company_name} subsc on {self.service.name} by {self.plan.plan_type}"

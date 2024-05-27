@@ -14,15 +14,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from rest_framework import routers
+from django.urls import path, include
 from services.views import SubscriptionView
+from rest_framework import routers
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
 
-# DRF
 router = routers.DefaultRouter()
 router.register(r'api/subscriptions', SubscriptionView)
 
