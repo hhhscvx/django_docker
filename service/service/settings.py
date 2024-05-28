@@ -148,3 +148,5 @@ LOGGING = {
         }
     }
 }
+
+CELERY_BROKER_URL = 'redis://redis:6379' # вторая хуйня это hostname, в docker-compose задали как redis

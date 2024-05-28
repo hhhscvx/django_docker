@@ -1,11 +1,11 @@
 services:
   web-app:
     build:
-      context: . # путь к dockerfile`у
+      context: . # путь до dockerfile`а, относительно PycharmProjects/django_docker/
     ports:
       - "8000:8000"
     volumes:
-      - ./service:/service
+      - ./service:/service # добавляем django app в контейнер -> при изменениях rebuild не потребуется
     environment:
       - DB_HOST=db # ссылка на сервис дб
       - DB_NAME=pgdb
@@ -25,3 +25,36 @@ services:
       - POSTGRES_DB=pgdb
       - POSTGRES_USER=pguser
       - POSTGRES_PASSWORD=pgpassword
+
+  redis:
+    image: redis:7.0.5-alpine
+    hostname: redis
+
+  worker:
+    build:
+      context: . # где искать dockerfile в проекте
+    hostname: worker # redis://{hostname}:6379
+    entrypoint: celery # начальная команда контейнера + доп. args снизу
+    command: -A celery_app.app worker --loglevel=info
+    volumes:
+      - ./service:/service
+    links:
+      - redis
+    depends_on:
+      - redis # ждет загрузки редиса
+    
+  flower:
+    build:
+      context: .
+    hostname: flower
+    entrypoint: celery
+    command: -A celery_app.app flower
+    volumes:
+      - ./service:/service
+    links:
+      - redis
+    depends_on:
+      - redis
+    ports:
+      - "5555:5555" # 127.0.0.1:5555 смотрим че происходит с тасками
+
