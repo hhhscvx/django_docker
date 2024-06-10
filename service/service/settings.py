@@ -149,4 +149,13 @@ LOGGING = {
     }
 }
 
-CELERY_BROKER_URL = 'redis://redis:6379/0' # вторая хуйня это hostname, в docker-compose задали как redis
+CELERY_BROKER_URL = 'redis://redis:6379/0' # hostname docker-compose
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://redis:6379/1",
+    }
+}
+
+PRICE_CACHE_NAME = 'price_cache'

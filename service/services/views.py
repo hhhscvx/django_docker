@@ -1,5 +1,8 @@
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from django.db.models import Prefetch, F, Sum
+from django.db.models import Prefetch, Sum
+from django.core.cache import cache
+from django.conf import settings
+
 from services.models import Subscription
 from services.serializers import SubscriptionSerializer
 from clients.models import Client
@@ -15,13 +18,20 @@ class SubscriptionView(ReadOnlyModelViewSet):
 
     serializer_class = SubscriptionSerializer
 
-    def list(self, request, *args, **kwargs):  # в этом методе обр. запрос и формируется ответ клиенту
+    def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
         response = super().list(request, *args, **kwargs)  # super = ReadOnlyModelViewSet
 
-        response_data = {'result': response.data}  # aggregate это SELECT SUM('price') из этого же queryset`а
-        response_data['total_amount'] = queryset.aggregate(total=Sum('price')).get('total')
-        response.data = response_data  # был обычный json словарь, стал список в ключе result
-        # в aggregate мы можем строить даже подобную хуйню: aggregate(total=Sum('price'), total2=Sum('plan_id')).
+        price_cache = cache.get(settings.PRICE_CACHE_NAME)
+
+        if price_cache:
+            total_price = price_cache
+        else:
+            total_price = queryset.aggregate(total=Sum('price')).get('total')
+            cache.set(settings.PRICE_CACHE_NAME, total_price, 60 * 60)
+
+        response_data = {'result': response.data}
+        response_data['total_amount'] = price_cache
+        response.data = response_data
         return response

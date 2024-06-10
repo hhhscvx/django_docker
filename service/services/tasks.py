@@ -1,7 +1,8 @@
 from celery import shared_task
 from celery_singleton import Singleton
 from django.db.models import F
-import time
+from django.core.cache import cache
+from django.conf import settings
 import datetime
 from django.db import transaction
 
@@ -21,6 +22,7 @@ def set_price(subscription_id):
 
         subscription.price = subscription.annotated_price  # поменяли прайс и сохранили
         subscription.save()
+    cache.delete(settings.PRICE_CACHE_NAME)
 
 
 @shared_task(base=Singleton)
@@ -33,3 +35,4 @@ def set_comment(subscription_id):
 
         subscription.comment = str(datetime.datetime.now())  # просто для примера
         subscription.save()
+    cache.delete(settings.PRICE_CACHE_NAME)

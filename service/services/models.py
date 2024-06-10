@@ -1,7 +1,9 @@
 from django.db import models
 from django.core.validators import MaxValueValidator
 from clients.models import Client
-from services.tasks import set_price
+from services.tasks import set_price, set_comment
+from django.db.models.signals import post_delete
+from .receivers import delete_cache_total_sum
 
 
 class Service(models.Model):
@@ -64,3 +66,14 @@ class Subscription(models.Model):
     
     def __str__(self):
         return f"{self.client.company_name} subsc on {self.service.name} by {self.plan.plan_type}"
+    
+    def save(self, *args, **kwargs):
+        creating = not bool(self.pk)
+        
+        result = super().save(*args, **kwargs)
+        if creating:
+            set_price.delay(self.id)
+        
+        return result
+
+post_delete.connect(delete_cache_total_sum, sender=Subscription)
