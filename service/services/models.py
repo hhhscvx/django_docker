@@ -41,6 +41,7 @@ class Plan(models.Model):
         if self.discount_percent != self.__discount_percent: # если поменяли скидку - пересчитываем
             for subscription in self.subscriptions.all(): # related_name=subscriptions!
                 set_price.delay(subscription.id)
+                set_comment.delay(subscription.id)
         
         return super().save(*args, **kwargs)
 
@@ -59,6 +60,7 @@ class Subscription(models.Model):
                                related_name='subscriptions',
                                on_delete=models.CASCADE)
     price = models.PositiveIntegerField(default=0)
+    comment = models.CharField(max_length=50, default="")
     
     def __str__(self):
         return f"{self.client.company_name} subsc on {self.service.name} by {self.plan.plan_type}"

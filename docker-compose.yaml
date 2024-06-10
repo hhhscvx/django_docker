@@ -37,13 +37,32 @@ services:
       context: . # где искать dockerfile в проекте
     hostname: worker # redis://{hostname}:6379
     entrypoint: celery # начальная команда контейнера + доп. args снизу
-    command: -A celery_app.app worker -l=info -E
+    command: -A celery_app.app worker -l info -E
     volumes:
       - ./service:/service
     links:
       - redis
     depends_on:
       - redis # ждет загрузки редиса
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=pgdb
+      - DB_USER=pguser
+      - DB_PASS=pgpassword
+
+  worker2: # т.к. у нас singleton воркеры, если поступает две задачи - оба берутся за них
+    build:
+      context: .
+    hostname: worker2
+    entrypoint: celery
+    command: -A celery_app.app worker -l info -E
+    volumes:
+      - ./service:/service
+    links:
+      - redis
+    depends_on:
+      - redis
       - db
     environment:
       - DB_HOST=db
