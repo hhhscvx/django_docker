@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MaxValueValidator
 from clients.models import Client
+from services.tasks import set_price
 
 
 class Service(models.Model):
@@ -28,8 +29,20 @@ class Plan(models.Model):
                                                        MaxValueValidator(100)
                                                    ])
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__discount_percent = self.discount_percent
+
     def __str__(self):
         return f"Plan type: {self.plan_type}"
+    
+    def save(self, *args, **kwargs):
+
+        if self.discount_percent != self.__discount_percent: # если поменяли скидку - пересчитываем
+            for subscription in self.subscriptions.all(): # related_name=subscriptions!
+                set_price.delay(subscription.id)
+        
+        return super().save(*args, **kwargs)
 
 
 class Subscription(models.Model):
@@ -45,6 +58,7 @@ class Subscription(models.Model):
     plan = models.ForeignKey(Plan,
                                related_name='subscriptions',
                                on_delete=models.CASCADE)
+    price = models.PositiveIntegerField(default=0)
     
     def __str__(self):
         return f"{self.client.company_name} subsc on {self.service.name} by {self.plan.plan_type}"

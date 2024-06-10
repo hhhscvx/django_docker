@@ -21,6 +21,8 @@ services:
   db:
     image: postgres:14.6-alpine
     restart: always # перезапуск контейнера при краше
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=pgdb
       - POSTGRES_USER=pguser
@@ -35,13 +37,19 @@ services:
       context: . # где искать dockerfile в проекте
     hostname: worker # redis://{hostname}:6379
     entrypoint: celery # начальная команда контейнера + доп. args снизу
-    command: -A celery_app.app worker --loglevel=info
+    command: -A celery_app.app worker -l=info -E
     volumes:
       - ./service:/service
     links:
       - redis
     depends_on:
       - redis # ждет загрузки редиса
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=pgdb
+      - DB_USER=pguser
+      - DB_PASS=pgpassword
     
   flower:
     build:
@@ -58,3 +66,5 @@ services:
     ports:
       - "5555:5555" # 127.0.0.1:5555 смотрим че происходит с тасками
 
+volumes:
+  postgres_data:
