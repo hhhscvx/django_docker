@@ -14,6 +14,18 @@ class Service(models.Model):
     def __str__(self):
         return f"Service: {self.name}"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__price_to_subscribe = self.price_to_subscribe
+
+    def save(self, *args, **kwargs):
+
+        if self.price_to_subscribe != self.__price_to_subscribe:
+            for subscription in self.subscriptions.all():
+                set_price.delay(subscription.id)
+
+        return super().save(*args, **kwargs)
+
 
 class Plan(models.Model):
     """Тариф сервиса, который определяет скидку"""
@@ -62,7 +74,7 @@ class Subscription(models.Model):
                                related_name='subscriptions',
                                on_delete=models.CASCADE)
     price = models.PositiveIntegerField(default=0)
-    comment = models.CharField(max_length=50, default="")
+    comment = models.CharField(max_length=50, default="", db_index=True)
     
     def __str__(self):
         return f"{self.client.company_name} subsc on {self.service.name} by {self.plan.plan_type}"

@@ -16,7 +16,8 @@ services:
       sh -c "python manage.py runserver 0.0.0.0:8000"
 
     depends_on:
-      - db # не запускаем веб, пока не запущена бд
+      - db
+      - redis
 
   db:
     image: postgres:14.6-alpine
